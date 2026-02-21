@@ -1,0 +1,5 @@
+haystack-ai
+fastapi[standard]
+sentence-transformers>=4.1.0
+datasets>=2.6.1
+amazon-bedrock-haystack
