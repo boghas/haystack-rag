@@ -8,12 +8,11 @@ from haystack.components.builders import ChatPromptBuilder
 from haystack.dataclasses import ChatMessage
 from haystack import Pipeline
 from utils.files import read_txt_file
+# from utils.config import (RAG_TEMPLATE_PATH, MODEL_ID, EMBEDDING_MODEL)
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
-
-RAG_TEMPLATE_PATH = "templates/rag_template.jinja2"
+load_dotenv()
 
 def run_rag_pipeline(
         question: str,
@@ -35,7 +34,7 @@ def run_rag_pipeline(
 
     retriever = InMemoryEmbeddingRetriever(document_store)
 
-    prompt = read_txt_file(RAG_TEMPLATE_PATH)
+    prompt = read_txt_file(os.getenv("RAG_TEMPLATE_PATH"))
 
     prompt_template = [ChatMessage.from_user(prompt)]
     prompt_builder = ChatPromptBuilder(prompt_template)

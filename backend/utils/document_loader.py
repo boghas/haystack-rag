@@ -3,7 +3,7 @@ from haystack import Document
 from typing import List
 
 
-def fetch_documents_from_dataset(dataset_name: str, split: str = "train") -> List[Document]:
+def fetch_documents_from_dataset(dataset_name: str, split: str = "train") -> List[Document] | List:
     """Fetch documents from a dataset.
     
     Args:
@@ -15,6 +15,12 @@ def fetch_documents_from_dataset(dataset_name: str, split: str = "train") -> Lis
     """
 
     dataset = load_dataset(path=dataset_name, split=split)
-    docs = [Document(content=doc["content"], meta=doc["meta"]) for doc in dataset]
+
+    docs = []
+    try:
+        if dataset[0]["title"]:
+            docs = [Document(content=doc["contents"], meta={"title": doc["title"], "abstract": doc["content"], "pmid": doc["id"]}) for doc in dataset]
+    except:
+        docs = [Document(content=doc["content"], meta=doc["meta"]) for doc in dataset]
 
     return docs
