@@ -10,7 +10,10 @@ dependencies = [
     "datasets>=2.6.1",
     "fastapi[standard]>=0.129.0",
     "haystack-ai>=2.24.1",
+    "nltk>=3.9.1",
+    "opensearch-haystack>=6.5.0",
     "pip-system-certs>=5.3",
+    "pypdf>=6.7.5",
     "python-dotenv>=1.2.1",
     "sentence-transformers>=4.1.0",
 ]

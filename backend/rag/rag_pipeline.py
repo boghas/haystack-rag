@@ -2,6 +2,8 @@ import os
 
 from haystack.components.embedders import SentenceTransformersTextEmbedder
 from haystack.components.retrievers import InMemoryEmbeddingRetriever
+from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
+from haystack_integrations.components.retrievers.opensearch import OpenSearchEmbeddingRetriever
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack_integrations.components.generators.amazon_bedrock import AmazonBedrockChatGenerator
 from haystack.components.builders import ChatPromptBuilder
@@ -16,7 +18,7 @@ load_dotenv()
 
 def run_rag_pipeline(
         question: str,
-        document_store: InMemoryDocumentStore,
+        document_store: InMemoryDocumentStore | OpenSearchDocumentStore,
         embedding_model: str | None = os.getenv("EMBEDDING_MODEL"),
     ) -> str:
     """"""
@@ -32,7 +34,11 @@ def run_rag_pipeline(
     
     text_embedder = SentenceTransformersTextEmbedder(embedding_model)
 
-    retriever = InMemoryEmbeddingRetriever(document_store)
+    # retriever = InMemoryEmbeddingRetriever(document_store)
+    retriever = OpenSearchEmbeddingRetriever(
+        document_store=document_store,
+        top_k=3,
+    )
 
     prompt = read_txt_file(os.getenv("RAG_TEMPLATE_PATH"))
 

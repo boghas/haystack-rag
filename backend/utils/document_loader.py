@@ -1,6 +1,10 @@
 from datasets import load_dataset
 from haystack import Document
 from typing import List
+from utils.config import EMBEDDING_MODEL
+from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
+from haystack.components.embedders.sentence_transformers_text_embedder import SentenceTransformersTextEmbedder
 
 
 def fetch_documents_from_dataset(dataset_name: str, split: str = "train") -> List[Document] | List:
