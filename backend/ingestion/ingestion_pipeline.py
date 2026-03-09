@@ -7,6 +7,7 @@ from haystack import Pipeline
 from typing import List
 from haystack import Document
 from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
 
 from dotenv import load_dotenv
 
@@ -15,7 +16,7 @@ load_dotenv(".env")
 
 def run_ingestion_pipeline(
         documents: List[Document],
-        document_store: InMemoryDocumentStore,
+        document_store: InMemoryDocumentStore | OpenSearchDocumentStore,
         embedding_model: str | None = os.getenv("EMBEDDING_MODEL")
     ):
     """"""
