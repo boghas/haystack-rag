@@ -5,31 +5,25 @@ from haystack.components.embedders import SentenceTransformersTextEmbedder
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.utils import ComponentDevice
 from haystack.components.joiners import DocumentJoiner
-from haystack.components.rankers import TransformersSimilarityRanker
+from haystack.components.rankers import SentenceTransformersSimilarityRanker
 from haystack_integrations.components.rankers.amazon_bedrock import AmazonBedrockRanker 
 from haystack.dataclasses import ChatMessage
 from haystack.components.builders import ChatPromptBuilder
 from haystack_integrations.components.generators.amazon_bedrock import AmazonBedrockChatGenerator
+from haystack_integrations.components.generators.google_genai import GoogleGenAIChatGenerator
 from haystack_integrations.components.embedders.amazon_bedrock import AmazonBedrockTextEmbedder
 from haystack import Pipeline
 from utils.files import read_txt_file
+from utils.config import MODEL_ID, RAG_TEMPLATE_PATH, EMBEDDING_MODEL
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
-logger = logging.getLogger(__name__)
-
-console_handler = logging.StreamHandler()
-logger.addHandler(console_handler)
-
-formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-console_handler.setFormatter(formatter)
+load_dotenv(".env")
 
 def run_hybrid_rag_pipeline(
         question: str,
         document_store: InMemoryDocumentStore,
-        model_id: str | None = os.getenv("MODEL_ID")  
+        model_id: str | None = MODEL_ID,
     ):
     """"""
     print(f"HYBRID_EMBEDDING_MODEL={os.getenv('EMBEDDING_MODEL')}")
@@ -48,22 +42,23 @@ def run_hybrid_rag_pipeline(
             Please provide an embedding model as a parameter or set the HYBRID_EMBEDDING_MODEL environment variable!"""
             )
     
-    prompt = read_txt_file(os.getenv("RAG_TEMPLATE_PATH"))
+    prompt = read_txt_file(RAG_TEMPLATE_PATH)
 
     prompt_template = [ChatMessage.from_user(prompt)]
     prompt_builder = ChatPromptBuilder(template=prompt_template)
 
-    generator = AmazonBedrockChatGenerator(model=model_id)
+    generator = GoogleGenAIChatGenerator(model=model_id)
     
-    embedder = AmazonBedrockTextEmbedder(model=os.getenv("EMBEDDING_MODEL"))
+    embedder = SentenceTransformersTextEmbedder(model=EMBEDDING_MODEL)
 
     bm25_retriever = InMemoryBM25Retriever(document_store=document_store)
     embeddings_retriever = InMemoryEmbeddingRetriever(document_store=document_store)
 
     document_joiner = DocumentJoiner()
 
-    # similarity_ranker = TransformersSimilarityRanker(model="BAAI/bge-reranker-base")
-    similarity_ranker = AmazonBedrockRanker(model="amazon.rerank-v1:0")
+    similarity_ranker = SentenceTransformersSimilarityRanker(model="BAAI/bge-reranker-base")
+    # similarity_ranker.warm_up()
+    # similarity_ranker = AmazonBedrockRanker(model="amazon.rerank-v1:0")
 
     hybrid_rag_pipeline = Pipeline()
 
@@ -92,7 +87,7 @@ def run_hybrid_rag_pipeline(
             },
             "ranker": {
                 "query": question,
-                "top_k": 10
+                "top_k": 3
             },
             "prompt_builder": {
                 "question": question,

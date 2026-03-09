@@ -228,7 +228,7 @@ requires-dist = [
     { name = "amazon-bedrock-haystack", specifier = ">=6.4.0" },
     { name = "datasets", specifier = ">=2.6.1" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.129.0" },
-    { name = "haystack-ai", specifier = ">=2.24.1" },
+    { name = "haystack-ai", specifier = "==2.25.2" },
     { name = "nltk", specifier = ">=3.9.1" },
     { name = "opensearch-haystack", specifier = ">=6.5.0" },
     { name = "pip-system-certs", specifier = ">=5.3" },
@@ -641,7 +641,7 @@ wheels = [
 
 [[package]]
 name = "haystack-ai"
-version = "2.24.1"
+version = "2.25.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -663,9 +663,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/e4/6dda0217fb9f04ab23544d63969ff846610e5600cc03b95fdae1929b676e/haystack_ai-2.24.1.tar.gz", hash = "sha256:5173b4e0f978dca4fa9a72589adb2fb0df7b3973e9d4c2c4dede1adb1959eb2e", size = 458904, upload-time = "2026-02-12T13:56:54.232Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/d8/d50f23d037153f89ec68853320417cd15b871e2fb56eb3ebab53b1185260/haystack_ai-2.25.2.tar.gz", hash = "sha256:e1be0ed36a379605c2cfbb7140585b77c56e2aa053339ab5d1d75826b48c44ec", size = 465994, upload-time = "2026-03-05T11:28:21.083Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/0d/2abf9b7731a60c1188ae5c7933a4f0ac75dfe2387b42be2698fe42c56405/haystack_ai-2.24.1-py3-none-any.whl", hash = "sha256:2bd3cb3e89ba604b3e247310d85b7892a119cadc3e7db490db9011fd469bc7fa", size = 672416, upload-time = "2026-02-12T13:56:52.923Z" },
+    { url = "https://files.pythonhosted.org/packages/58/cc/0c84e3842b10ba771e4ce06ab37782989a99f0498477c6caebebd155ee4b/haystack_ai-2.25.2-py3-none-any.whl", hash = "sha256:7079d585ea8358650366292a89e75e52ed0e4fd850f584e90cb496bd4d3b1a62", size = 680139, upload-time = "2026-03-05T11:28:22.694Z" },
 ]
 
 [[package]]

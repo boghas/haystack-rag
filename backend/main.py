@@ -1,8 +1,6 @@
 import os
 import tempfile
 from fastapi import FastAPI, BackgroundTasks, UploadFile
-from ingestion.ingestion_pipeline import run_ingestion_pipeline
-from ingestion.hybrid_ingestion_pipeline import run_hybrid_ingestion_pipeline
 from ingestion.file_ingestion_pipeline import run_file_ingestion_pipeline
 from rag.rag_pipeline import run_rag_pipeline
 from rag.hybrid_rag_pipeline import run_hybrid_rag_pipeline
@@ -21,9 +19,6 @@ document_store = InMemoryDocumentStore()
 #     index="test-index",
 #     embedding_dim=384,
 # )
-
-# document_store.create_index("test-index")
-# print(f"indexed created successfully")
 
 if document_store:
     print(f"Document store loaded successfully")
@@ -46,27 +41,12 @@ async def get_all_documents():
     return {"documents": documents}
 
 
-@app.post("/api/v1/ingest-files/")
+@app.post("/api/v1/ingest-files")
 async def ingest_files(files: List[UploadFile], background_tasks: BackgroundTasks):
     file_paths = await save_uploaded_files(files=files, local_dir=TEMP_DIR)
     background_tasks.add_task(run_file_ingestion_pipeline, file_paths,  document_store)
 
     return {"nr_of_files": len(file_paths), "message": "Launhed ingestion process.."}
-
-
-@app.post("/ingest-data")
-async def ingest_data(background_tasks: BackgroundTasks):
-    documents = fetch_documents_from_dataset(dataset_name="bilgeyucel/seven-wonders")
-    background_tasks.add_task(run_ingestion_pipeline, documents, document_store)
-
-    return {"message": "Ingestion process is started..."}
-
-@app.post("/hybrid-ingestion")
-async def hybrid_ingest_data(backgrounds_tasks: BackgroundTasks):
-    documents = fetch_documents_from_dataset(dataset_name="bilgeyucel/seven-wonders")
-    backgrounds_tasks.add_task(run_hybrid_ingestion_pipeline, documents, document_store)
-
-    return {"message": "Hybrid ingestion process is started..."}
 
 @app.get("/chat")
 async def chat(question: str):
@@ -74,7 +54,7 @@ async def chat(question: str):
 
     return {"response": response}
 
-@app.get("/hybrid-chat")
+@app.get("/api/v1/chat")
 async def hybrid_chat(question: str):
     response = run_hybrid_rag_pipeline(question=question, document_store=document_store)
 
