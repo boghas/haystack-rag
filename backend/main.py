@@ -1,17 +1,24 @@
 import os
 import tempfile
-from fastapi import FastAPI, BackgroundTasks, UploadFile
+from fastapi import FastAPI, BackgroundTasks, UploadFile, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from ingestion.file_ingestion_pipeline import run_file_ingestion_pipeline
 from rag.rag_pipeline import run_rag_pipeline
 from rag.hybrid_rag_pipeline import run_hybrid_rag_pipeline
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from utils.document_loader import fetch_documents_from_dataset
 from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
-from typing import List
+from typing import Annotated, List
 from utils.config import TEMP_DIR
 from utils.files import save_uploaded_files
+from utils.auth import get_current_active_user, fake_hashed_password
+from fake_db.fake_db import fake_users
+from models.user import User, UserInDB
+
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 document_store = InMemoryDocumentStore()
 # document_store = OpenSearchDocumentStore(
@@ -28,11 +35,38 @@ if document_store:
 async def read_root():
     return {"Hello": "World"}
 
-@app.get("/doc_count")
-async def read_doc_count():
+@app.post("/token")
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    user_dict = fake_users.get(form_data.username)
+    if not user_dict:
+        raise HTTPException(
+            status_code=400,
+            detail="Incorrect username or password"
+        )
+    
+    user = UserInDB(**user_dict)
+    hashed_password = fake_hashed_password(form_data.password)
+    if not hashed_password == user.hashed_password:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    return {"access_token": user.username, "token_type": "bearer"}
+
+@app.get("/api/v1/users/me")
+async def get_current_user(current_user: Annotated[User, Depends(get_current_active_user)]):
+    return current_user
+
+@app.get("/api/v1/doc_count")
+async def read_doc_count(token: Annotated[str, Depends(oauth2_scheme)]):
     doc_count: int = document_store.count_documents()
 
     return {"doc_count": doc_count}
+
+
+# @app.get("/doc_count")
+# async def read_doc_count():
+#     doc_count: int = document_store.count_documents()
+
+#     return {"doc_count": doc_count}
 
 @app.get("/api/v1/documents")
 async def get_all_documents():
