@@ -15,6 +15,8 @@ Example questions:
 "How did Colossus of Rhodes collapse?"
 ```
 
+Or simply upload your own PDF files via `/api/v1/ingest-files` and chat with your files through: `/api/v1/chat`.
+
 ## Install prerequisites
 
 - Install Python 3.11 or higher: https://www.python.org/downloads/
@@ -26,17 +28,25 @@ You must first create an [AWS account](https://portal.aws.amazon.com/).
 
 Create a `.env` file in the `backend` directory of the project and populate it with the values:
 ```
-MODEL_ID="deepseek.v3.2"
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_DEFAULT_REGION
-EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
+MODEL_ID=""
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""
+AWS_DEFAULT_REGION=""
+EMBEDDING_MODEL=""
+HYBRID_EMBEDDING_MODEL=""
+RAG_TEMPLATE_PATH=""
+SERPERDEV_API_KEY=""
+OPENAI_API_KEY=""
+GOOGLE_API_KEY=""
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=""
+OPENSEARCH_USERNAME=""
+OPENSEARCH_PASSWORD=""
 ```
 
 I have tested it with:
 
 ```
-MODEL_ID="deepseek.v3.2"
+MODEL_ID="gemini-2.5-flash"
 EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 ```
 
