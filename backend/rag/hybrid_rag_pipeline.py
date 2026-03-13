@@ -15,6 +15,7 @@ from haystack_integrations.components.embedders.amazon_bedrock import AmazonBedr
 from haystack import Pipeline
 from utils.files import read_txt_file
 from utils.config import MODEL_ID, RAG_TEMPLATE_PATH, EMBEDDING_MODEL
+from models.hybrid_rag_run_model import HybridRagRunModel, TextEmbedderModel, BM25RetrieverModel, PromptBuilderModel, RankerModel
 
 from dotenv import load_dotenv
 
@@ -78,22 +79,19 @@ def run_hybrid_rag_pipeline(
     hybrid_rag_pipeline.connect("prompt_builder.prompt", "llm.messages")
 
     response = hybrid_rag_pipeline.run(
-        {
-            "text_embedder": {
-                "text": question,
-            },
-            "bm25_retriever": {
-                "query": question,
-            },
-            "ranker": {
-                "query": question,
-                "top_k": 3
-            },
-            "prompt_builder": {
-                "question": question,
-            },
-        },
+        HybridRagRunModel(
+            text_embedder=TextEmbedderModel(text=question), 
+            bm25_retriever=BM25RetrieverModel(query=question),
+            ranker=RankerModel(query=question, top_k=3),
+            prompt_builder=PromptBuilderModel(question=question),
+        ).model_dump()
     )
+
+    print(response)
+
+    print(f"replies: {response["llm"]["replies"]}")
+
+    print(f"[0]: {response["llm"]["replies"][0].role}")
 
     return response["llm"]["replies"][0].text
     
