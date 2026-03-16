@@ -15,6 +15,9 @@ from utils.auth import get_current_active_user, fake_hashed_password
 from fake_db.fake_db import fake_users
 from models.user import User, UserInDB
 from models.messages.chat import ChatMessage
+from models.roles.chat_roles import ChatRoles
+from models.responses.chat import LLMChatResponse
+from agents.agent import HaystackAgent
 
 
 app = FastAPI()
@@ -87,8 +90,17 @@ async def chat(question: str, token: Annotated[str, Depends(oauth2_scheme)]):
     return {"response": response}
 
 @app.get("/api/v1/chat")
-async def hybrid_chat(message: ChatMessage, token: Annotated[str, Depends(oauth2_scheme)]):
+async def hybrid_chat(question: str, token: Annotated[str, Depends(oauth2_scheme)]):
+    message = ChatMessage(text=question, role=ChatRoles.USER)
     response = run_hybrid_rag_pipeline(question=message.text, document_store=document_store)
 
     return {"response": response}
+
+@app.get("/api/v1/ask", response_model=LLMChatResponse)
+def ask_agent(question: str, token: Annotated[str, Depends(oauth2_scheme)]):
+    agent = HaystackAgent(document_store=document_store)
+
+    LLMChatResponse.response = agent.run(query=question)
+
+    return LLMChatResponse
 

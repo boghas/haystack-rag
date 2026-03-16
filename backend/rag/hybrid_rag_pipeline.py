@@ -12,6 +12,7 @@ from haystack.components.builders import ChatPromptBuilder
 from haystack_integrations.components.generators.amazon_bedrock import AmazonBedrockChatGenerator
 from haystack_integrations.components.generators.google_genai import GoogleGenAIChatGenerator
 from haystack_integrations.components.embedders.amazon_bedrock import AmazonBedrockTextEmbedder
+from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
 from haystack import Pipeline
 from utils.files import read_txt_file
 from utils.config import MODEL_ID, RAG_TEMPLATE_PATH, EMBEDDING_MODEL
@@ -23,7 +24,7 @@ load_dotenv(".env")
 
 def run_hybrid_rag_pipeline(
         question: str,
-        document_store: InMemoryDocumentStore,
+        document_store: InMemoryDocumentStore | OpenSearchDocumentStore,
         model_id: str | None = MODEL_ID,
     ):
     """"""
