@@ -1,102 +1,63 @@
 import os
-import json
+
 from haystack.components.generators.chat import OpenAIChatGenerator
 from haystack_integrations.components.generators.amazon_bedrock import AmazonBedrockChatGenerator
+from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
 from haystack.dataclasses import ChatMessage
 from haystack.tools.tool import Tool
+from haystack.tools.component_tool import ComponentTool
 from haystack.components.agents import Agent
 from haystack.utils import Secret
+from haystack.components.websearch import SerperDevWebSearch
 from haystack_integrations.components.generators.google_genai import GoogleGenAIChatGenerator
 from typing import List, Dict
+from utils.config import MODEL_ID
+from components.rag import HybridRAGComponent
+from typing import Callable
 
 from dotenv import load_dotenv
 
 load_dotenv(".env")
 
-# MODEL_ID = os.getenv("MODEL_ID", "")
-MODEL_ID = "gemini-2.5-flash"
+class HaystackAgent:
 
-## Tool Function
-def calculate(expression: str) -> dict:
-    try:
-        result = eval(expression, {"__builtins__": {}})
-        return {"result": result}
-    except Exception as e:
-        return {"error": str(e)}
-
-def read_txt_file_by_name(file_name: str) -> Dict[str, str]:
-    """Read the contents of a file and return the contents.
+    def __init__(
+            self,
+            document_store: InMemoryDocumentStore | OpenSearchDocumentStore | None = None,
+        ):
+        self.document_store = document_store
+        self._set_tools()
+        self._create_agent()
     
-    Args:
-        file_name (str): The file name to read the contents from. Example: "test.txt".
+    def _set_tools(self):
+        web_search_tool = ComponentTool(
+            component=SerperDevWebSearch(top_k=3, api_key=Secret.from_env_var("SERPERDEV_API_KEY")),
+            name="web_tool",
+            description="Tool to search the web for extra information.",
+        )
+
+        rag_tool = ComponentTool(
+            component=HybridRAGComponent(document_store=self.document_store),
+            name="rag_tool",
+            description="Tool to search for internal data."
+        )
+
+        self.tools = [web_search_tool, rag_tool]
     
-    Returns:
-        Dict[str, str]: A dictionary with the contents of the file. Example: {"contents": "..."}
-    """
-    print(f"file_request: {file_name}")
-    contents: str = ""
-    data: list[str] = []
-    file_path: str = os.path.join("agents", file_name)
-    try:
-        with open(file_path, "r", encoding="utf-8") as fl:
-            data: list[str] = fl.readlines()
-    except FileNotFoundError:
-        raise
-    except Exception as ex:
-        print(f"Caught exception ex: {ex}")
-        raise
-    finally:
-        contents = "\n".join(data)
+    def _create_agent(self):
+        self.agent = Agent(
+            chat_generator=GoogleGenAIChatGenerator(model=MODEL_ID),
+            system_prompt="""You are a helpful assistant. When asked about internal data regarding security guides,
+                use the `rag_tool` to search for relevant documents in the vector database and use those documents to answer the query.
+                For any other query you must use the `web_tool` to search for external data from the web to form an answer.""",
+            tools=self.tools
+        )
     
-    print(f"contents: {contents}")
-    
-    return {"contents": contents}
+    def run(self, query: str):
+        message = ChatMessage.from_user(query)
+        result = self.agent.run([message])
 
-## Tool Definition
-calculator_tool = Tool(
-    name="calculator",
-    description="Evaluate basic math expressions.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "expression": {
-                "type": "string",
-                "description": "Math expression to evaluate",
-            },
-        },
-        "required": ["expression"],
-    },
-    function=calculate,
-    outputs_to_state={"calc_result": {"source": "result"}},
-)
+        return result["messages"][-1].text
 
-read_file_tool = Tool(
-    name="file_reader",
-    description="Read txt files by name and return the contents of the file.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "file_name": {
-                "type": "string",
-                "description": "The file name to read contents from.",
-            }
-        },
-        "required": ["file_name"],
-    },
-    function=read_txt_file_by_name,
-    outputs_to_state={"file_contents": {"source": "contents"}}
-)
 
-## Agent Setup
-agent = Agent(
-    chat_generator=GoogleGenAIChatGenerator(model=MODEL_ID),
-    tools=[calculator_tool, read_file_tool],
-    exit_conditions=["text"],
-    state_schema={"file_contents": {"type": str}},
-)
-
-## Run the Agent
-# response = agent.run(messages=[ChatMessage.from_user("What is 7 * (4 + 2)?")])
-response = agent.run(messages=[ChatMessage.from_user("What does the test.txt file say?")])
-
-print("Response:", response["messages"][-1].text)
