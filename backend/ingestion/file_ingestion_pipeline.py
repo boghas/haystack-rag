@@ -10,14 +10,22 @@ from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.writers.document_writer import DocumentWriter
 from haystack_integrations.document_stores.opensearch import OpenSearchDocumentStore
 from haystack import Pipeline
+from models.responses.ingestion import IngestionResponseModel
+from models.statuses.process_status import ProcessStatus
 
 
 def run_file_ingestion_pipeline(
         file_paths: List[Path],
         document_store: InMemoryDocumentStore | OpenSearchDocumentStore,
         embedding_model: str = EMBEDDING_MODEL,
-    ):
+    ) -> IngestionResponseModel:
     """"""
+    response = IngestionResponseModel(
+        files=file_paths,
+        status=ProcessStatus.RUNNING,
+        nr_of_files=len(file_paths)
+    )
+
     converter = PyPDFToDocument()
     splitter = DocumentSplitter(split_by="sentence", split_length=5)
     embedder = SentenceTransformersDocumentEmbedder(model=embedding_model)
@@ -36,8 +44,16 @@ def run_file_ingestion_pipeline(
     pipeline.connect("splitter.documents", "embedder.documents")
     pipeline.connect("embedder.documents", "writer.documents")
 
-    result = pipeline.run({"sources": file_paths})
+    try:
+        result = pipeline.run({"sources": file_paths})
 
-    print(f"result: {result}")
+        response.status = ProcessStatus.COMPLETED
+        response.documents_written = result["writer"]["documents_written"]
 
-    return result
+        return response
+    except Exception as ex:
+        print(f"Failed running hybrid pipeline... {ex}")
+        response.status = ProcessStatus.FAILED
+        response.error_message = str(ex)
+    
+    return response
