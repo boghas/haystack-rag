@@ -14,6 +14,7 @@ from utils.files import save_uploaded_files
 from utils.auth import get_current_active_user, fake_hashed_password
 from fake_db.fake_db import fake_users
 from models.user import User, UserInDB
+from models.messages.chat import ChatMessage
 
 
 app = FastAPI()
@@ -61,36 +62,33 @@ async def read_doc_count(token: Annotated[str, Depends(oauth2_scheme)]):
 
     return {"doc_count": doc_count}
 
-
-# @app.get("/doc_count")
-# async def read_doc_count():
-#     doc_count: int = document_store.count_documents()
-
-#     return {"doc_count": doc_count}
-
 @app.get("/api/v1/documents")
-async def get_all_documents():
+async def get_all_documents(token: Annotated[str, Depends(oauth2_scheme)]):
     documents = document_store.filter_documents()
 
     return {"documents": documents}
 
 
 @app.post("/api/v1/ingest-files")
-async def ingest_files(files: List[UploadFile], background_tasks: BackgroundTasks):
+async def ingest_files(
+        files: List[UploadFile], 
+        background_tasks: BackgroundTasks, 
+        token: Annotated[str, Depends(oauth2_scheme)]
+    ):
     file_paths = await save_uploaded_files(files=files, local_dir=TEMP_DIR)
     background_tasks.add_task(run_file_ingestion_pipeline, file_paths,  document_store)
 
     return {"nr_of_files": len(file_paths), "message": "Launhed ingestion process.."}
 
 @app.get("/chat")
-async def chat(question: str):
+async def chat(question: str, token: Annotated[str, Depends(oauth2_scheme)]):
     response = run_rag_pipeline(question, document_store)
 
     return {"response": response}
 
 @app.get("/api/v1/chat")
-async def hybrid_chat(question: str):
-    response = run_hybrid_rag_pipeline(question=question, document_store=document_store)
+async def hybrid_chat(message: ChatMessage, token: Annotated[str, Depends(oauth2_scheme)]):
+    response = run_hybrid_rag_pipeline(question=message.text, document_store=document_store)
 
     return {"response": response}
 
